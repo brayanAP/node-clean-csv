@@ -1,4 +1,4 @@
-require('dotenv').config()
+require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const csv = require("fast-csv");
@@ -9,62 +9,12 @@ const formatPhone = require("./utils/formatPhone");
 const formatEmail = require("./utils/formatEmail");
 const formatFullName = require("./utils/formatFullName");
 const arrayToChunks = require("./utils/arrayToChunks");
+const csvToArray = require("./utils/csvToArray");
 
 const FILE_INPUT = path.resolve(__dirname, "input.csv");
 const OUTPUT_DIR = path.resolve(__dirname, "output");
-const FILE_OUTPUT_CLEAN = path.resolve(OUTPUT_DIR, "clean.csv");;
+const FILE_OUTPUT_CLEAN = path.resolve(OUTPUT_DIR, "clean.csv");
 const FILE_OUTPUT_ERRORS = path.resolve(OUTPUT_DIR, "errors.csv");
-
-const getRows = new Promise((resolve) => {
-  if (!fs.existsSync(FILE_INPUT)) {
-    console.error(`Archivo no encontrado: ${FILE_INPUT}`);
-    process.exit(1);
-  }
-
-  const rowsClean = [];
-  const rowsErrors = [];
-
-  fs.createReadStream(FILE_INPUT)
-    .pipe(
-      csv.parse({
-        headers: (headers) => {
-          const headerCount = {};
-          return headers.map((header) => {
-            if (headerCount[header]) {
-              headerCount[header]++;
-              return `${header}_${headerCount[header]}`;
-            } else {
-              headerCount[header] = 1;
-              return header;
-            }
-          });
-        },
-      })
-    )
-    .on("data", (row) => {
-      const phone = formatPhone(row["Móvil"], row["Teléfono alternativo"]);
-      const email = formatEmail(row["Correo"]);
-      const fullname = formatFullName(row["Contacto"]);
-
-      if (fullname.toLowerCase().includes("prueba") || email.toLowerCase().includes("prueba") || phone.toLowerCase().includes("prueba")) {
-        rowsErrors.push(row);
-        return;
-      }
-
-      if (phone === "UNKNOWN" && email === "UNKNOWN") {
-        rowsErrors.push(row);
-        return;
-      }
-
-      row["Contacto"] = fullname;
-      row["Móvil"] = phone;
-      row["Correo"] = email;
-
-      rowsClean.push(row);
-    })
-    .on("end", () => resolve([rowsClean, rowsErrors]))
-    .on("error", () => resolve([rowsClean, rowsErrors]));
-});
 
 const openai = new OpenAI({
   apiKey: process.env.OPEN_AI_KEY,
@@ -117,7 +67,39 @@ Asegúrate de respetar el formato JSON en la respuesta.
   return jsonResp;
 };
 
-getRows.then(([rowsClean, rowsErrors]) => {
+csvToArray(
+  FILE_INPUT,
+  (row) => {
+    const phone = formatPhone(row["Móvil"], row["Teléfono alternativo"]);
+    const email = formatEmail(row["Correo"]);
+    const fullname = formatFullName(row["Contacto"]);
+
+    if (phone === "UNKNOWN" && email === "UNKNOWN") {
+      return row;
+    }
+
+    row["Contacto"] = fullname;
+    row["Móvil"] = phone;
+    row["Correo"] = email;
+
+    return row;
+  },
+  (row) => {
+    const phone = row["Móvil"];
+    const email = row["Correo"];
+    const fullname = row["Contacto"];
+
+    if (phone === "UNKNOWN" && email === "UNKNOWN") {
+      return false;
+    }
+
+    if (fullname.toLowerCase().includes("prueba") || email.toLowerCase().includes("prueba") || phone.toLowerCase().includes("prueba")) {
+      return false;
+    }
+
+    return true;
+  }
+).then(([rowsClean, rowsErrors]) => {
   const chunks = arrayToChunks(rowsClean);
 
   const rowsCleanWithOpenai = [];
@@ -157,9 +139,12 @@ getRows.then(([rowsClean, rowsErrors]) => {
 
     if (!fs.existsSync(OUTPUT_DIR)) {
       fs.mkdirSync(OUTPUT_DIR);
+      console.log(`--- Creando directorio output [${OUTPUT_DIR}]`);
     } else {
       fs.rmSync(OUTPUT_DIR, { recursive: true });
       fs.mkdirSync(OUTPUT_DIR);
+
+      console.log(`--- Eliminando directorio output [${OUTPUT_DIR}]`);
     }
 
     csvClean.pipe(fs.createWriteStream(FILE_OUTPUT_CLEAN));
@@ -178,9 +163,7 @@ getRows.then(([rowsClean, rowsErrors]) => {
 
     rowsErrors.forEach((row) => {
       csvErrors.write(row);
-    }
-      
-      );
+    });
 
     csvErrors.end();
 
