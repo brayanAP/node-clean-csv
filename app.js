@@ -74,23 +74,29 @@ const convertWithOpenai = async (data) => {
       {
         role: "system",
         content: `
-            Te serán proveídos nombres en español donde no todos tienen coherencia o esten abreviados,
-            En caso de no tener coherencia a un nombre mexicano, deberás de colocar todo el nombre en "nombres" y vacio en "apellidoM" y "apellidoP"
-            Si est abrevidado, deberás de colocar lo mas cercano a un nombre mexicano en "nombres" y vacio en "apellidoM" y "apellidoP" los apellidos materno y paterno a un asi esten abreviados
-            Debes regresarme un array con objetos que contengan el "nombres", "apellidoM" y "apellidoP",
-            Debes de responder en formato JSON
-    
-            Ejemplo de salida:
-            { 
-                result: [
-                    {
-                        nombres: 'Mere', // Nombres, puede ser uno o más
-                        apellidoM: 'García', // Apellido Materno
-                        apellidoP: 'De La Cruz', //  Apellido Paterno
-                    }
-                ]
-            }
-            `,
+Recibirás una lista de nombres en español, los cuales pueden estar incompletos, abreviados o carecer de coherencia como nombres típicos mexicanos. Sigue las siguientes reglas para procesarlos:
+  1. Si el nombre no tiene coherencia con un nombre mexicano:
+  1.1. Coloca todo el contenido en el campo "Nombres".
+  1.2.	Deja los campos "ApellidoM" (apellido materno) y "ApellidoP" (apellido paterno) vacíos.
+  2.	Si el nombre está abreviado:
+  2.1.	Reconstruye el nombre lo más cercano posible a un nombre mexicano y colócalo en el campo "Nombres".
+  2.2	Si los apellidos (materno y paterno) están abreviados, colócalos en los campos "ApellidoM" y "ApellidoP" según corresponda. Si no hay apellidos, déjalos vacíos.
+  3.	Devuélveme un arreglo (array) de objetos con los campos "nombres", "ApellidoM", y "ApellidoP" en el siguiente formato JSON:
+
+Ejemplo de salida:
+
+{
+    "result": [
+        {
+            "Nombres": "Mere", // Uno o más nombres
+            "ApellidoM": "García", // Apellido Materno (puede estar vacío)
+            "ApellidoP": "De La Cruz" // Apellido Paterno (puede estar vacío)
+        }
+    ]
+}
+
+Asegúrate de respetar el formato JSON en la respuesta.
+`,
       },
       {
         role: "user",
