@@ -1,5 +1,3 @@
-Aquí tienes un archivo Markdown que puedes incluir en tu README para explicar el propósito y funcionamiento del código:
-
 # CSV Cleaner and Name Formatter with OpenAI
 
 Este proyecto permite limpiar, validar y procesar datos de un archivo CSV utilizando utilidades personalizadas y la API de OpenAI. Su propósito principal es transformar y estructurar datos personales, como nombres y contactos, para estandarizarlos y adaptarlos a un formato específico.
