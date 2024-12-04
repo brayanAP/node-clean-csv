@@ -1,4 +1,8 @@
 const arrayToChunks = (rows, n = 50) => {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
   const chunks = [];
   let i = 0;
 
