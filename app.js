@@ -8,6 +8,7 @@ const secondsToHHMMSS = require("./utils/secondsToHHMMSS");
 const formatPhone = require("./utils/formatPhone");
 const formatEmail = require("./utils/formatEmail");
 const formatFullName = require("./utils/formatFullName");
+const arrayToChunks = require("./utils/arrayToChunks");
 
 const FILE_INPUT = path.resolve(__dirname, "input.csv");
 const OUTPUT_DIR = path.resolve(__dirname, "output");
@@ -116,12 +117,7 @@ Asegúrate de respetar el formato JSON en la respuesta.
 };
 
 getRows.then(([rowsClean]) => {
-  const chunks = [];
-  let i = 0;
-  const n = 80;
-  while (i < rowsClean.length) {
-    chunks.push(rowsClean.slice(i, (i += n)));
-  }
+  const chunks = arrayToChunks(rowsClean);
 
   const rowsCleanWithOpenai = [];
 
