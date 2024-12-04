@@ -13,6 +13,7 @@ const arrayToChunks = require("./utils/arrayToChunks");
 const FILE_INPUT = path.resolve(__dirname, "input.csv");
 const OUTPUT_DIR = path.resolve(__dirname, "output");
 const FILE_OUTPUT_CLEAN = path.resolve(OUTPUT_DIR, "clean.csv");;
+const FILE_OUTPUT_ERRORS = path.resolve(OUTPUT_DIR, "errors.csv");
 
 const getRows = new Promise((resolve) => {
   if (!fs.existsSync(FILE_INPUT)) {
@@ -116,7 +117,7 @@ Asegúrate de respetar el formato JSON en la respuesta.
   return jsonResp;
 };
 
-getRows.then(([rowsClean]) => {
+getRows.then(([rowsClean, rowsErrors]) => {
   const chunks = arrayToChunks(rowsClean);
 
   const rowsCleanWithOpenai = [];
@@ -168,6 +169,22 @@ getRows.then(([rowsClean]) => {
     });
 
     csvClean.end();
+
+    console.log(`--- CSV limpio guardado en [${FILE_OUTPUT_CLEAN}]`);
+
+    const csvErrors = csv.format({ headers: true });
+
+    csvErrors.pipe(fs.createWriteStream(FILE_OUTPUT_ERRORS));
+
+    rowsErrors.forEach((row) => {
+      csvErrors.write(row);
+    }
+      
+      );
+
+    csvErrors.end();
+
+    console.log(`--- CSV de errores guardado en [${FILE_OUTPUT_ERRORS}]`);
 
     console.log(`--- Procesado finalizado en [${secondsToHHMMSS(totalSeconds)}]`);
   };
